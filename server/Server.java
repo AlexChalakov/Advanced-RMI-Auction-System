@@ -8,6 +8,7 @@ import java.util.List;
 
 public class Server implements Auction{
 
+    //used for just creating initial item
     private AuctionItem item;
     private AuctionItem[] aItem;
 
@@ -47,9 +48,13 @@ public class Server implements Auction{
 
     @Override
     public AuctionItem getSpec(int itemID) throws RemoteException {
-        //items[0] = item;
+        for(WinningDetails winningDetails: winBidDetails){
+            if(winningDetails.winningID == itemID){
+                return winningDetails.getAuctionItem();
+            }
+        }
 
-        return null; //sealedObject
+        return null;
     }
 
     @Override
@@ -62,25 +67,40 @@ public class Server implements Auction{
             return 0;
         }
     }
+    
+    public String getEmail(int userID) {
+        if(users.containsKey(userID)){
+            return users.get(userID);
+        } else {
+            return null;
+        }
+    }
 
     @Override
     public int newAuction(int userID, AuctionSaleItem item) throws RemoteException {
         //check if user exists in system
-
+        if(!users.containsKey(userID)){
+            String errorMsg = "User ID does not exist in the system";
+            System.out.println(errorMsg);
+            return 1;
+        }
         //check if auction exists, return its id
 
+        //creating new auction item
         AuctionItem auctionItem = new AuctionItem();
 
         auctionItem.itemID = auctionItemsById.size() + 1;
         auctionItem.name = item.name;
         auctionItem.description = item.description;
         auctionItem.highestBid = item.reservePrice;
-    
+        
+        //putting itemID and user in auction hashmap
         auctionItemsById.put(auctionItem.itemID, userID);
-        WinningDetails winningDetails = new WinningDetails(userID, auctionItem);
+        //putting userID and the item in the winning details
+        WinningDetails winningDetails = new WinningDetails(userID, auctionItem, auctionItem.highestBid);
         winBidDetails.add(winningDetails);
 
-        return auctionItemsById.size();
+        return auctionItem.itemID;
     }
 
     @Override
@@ -95,16 +115,48 @@ public class Server implements Auction{
     @Override
     public AuctionCloseInfo closeAuction(int userID, int itemID) throws RemoteException {
         //check if auction exists
+        if(auctionItemsById.get(itemID) == null){
+            return null;
+        }
 
-        AuctionCloseInfo auctionCloseInfo = createCloseInfo(null, itemID);
-        WinningDetails winningDetails = new WinningDetails(itemID, item);
+        //get the itemID and notate it towards the winning details
+        Integer AuctionItemID = auctionItemsById.get(itemID);
+        WinningDetails winningDetails = new WinningDetails(AuctionItemID);
 
-        return null;
+        //close the auction by removing the item and the user ID from the auction
+        auctionItemsById.remove(itemID, userID);
+        winBidDetails.remove(winningDetails);
+
+        //check the last bet price
+        if(winningDetails.getLastBetPrice() >= winningDetails.getAuctionItem().highestBid) {
+            AuctionCloseInfo auctionCloseInfo = createCloseInfo(null, 0);
+            return auctionCloseInfo;
+        }
+
+        //getting the auction close info - getting the email from the function and the highest bid from the winning details
+        AuctionCloseInfo auctionCloseInfo = createCloseInfo(getEmail(winningDetails.winningID), winningDetails.getAuctionItem().highestBid);
+
+        return auctionCloseInfo;
     }
 
     @Override
     public boolean bid(int userID, int itemID, int price) throws RemoteException {
-        return false;
+        
+        //get item from list of winning details by the itemID
+        WinningDetails winningDetails = winBidDetails.get(itemID);
+        AuctionItem auctionItem = winningDetails.getAuctionItem();
+
+        //check if price is smaller than highest bid
+        if(auctionItem.highestBid >= price) {
+            return false;
+        }
+
+        //make price the highest bid
+        winningDetails.getAuctionItem().highestBid = price;
+        //set the person having the highest bid
+        winningDetails.setWinningID(userID);
+
+        return true;
     }
 
     private AuctionCloseInfo createCloseInfo(String winningEmail, int winningPrice) {
