@@ -7,10 +7,10 @@ import java.util.Scanner;
 public class Client{
     public static void main(String[] args) {
 
-        if (args.length < 1) {
+        /*if (args.length < 1) {
             System.out.println("Usage: java Client n");
             return;
-        }
+        }*/
 
         try {
             String name = "Auction";
@@ -31,8 +31,10 @@ public class Client{
                     " Enter the correpsonding key to the operation you want to be executed");
                     switch(scanner.nextInt()) {
                         case 1:
+                            Scanner scanner1 = new Scanner(System.in);
                             System.out.println("Please enter your email address:");
-                            int result1 = server.newUser(scanner.nextLine());
+                            String email = scanner1.nextLine();
+                            int result1 = server.newUser(email);
                             if(result1 == -1){
                                 System.out.println("Error! User has not been created succesfully!");
                             }
@@ -40,17 +42,17 @@ public class Client{
                             break;
 
                         case 2:
-                            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(System.in));
                             AuctionSaleItem auctionSaleItem = new AuctionSaleItem();
+                            Scanner scanner2 = new Scanner(System.in);
 
                             System.out.println("Please enter your user ID.");
-                            Integer userId = bufferedReader.read();
+                            Integer userId = scanner2.nextInt();
                             System.out.println("Please enter the item's name.");
-                            auctionSaleItem.name = bufferedReader.readLine();
+                            auctionSaleItem.name = scanner2.next();
                             System.out.println("Please enter the item's description.");
-                            auctionSaleItem.description = bufferedReader.readLine();
+                            auctionSaleItem.description = scanner2.next();
                             System.out.println("Please enter the item's reserve price.");
-                            auctionSaleItem.reservePrice = Integer.parseInt(bufferedReader.readLine());
+                            auctionSaleItem.reservePrice = Integer.parseInt(scanner2.next());
 
                             int result2 = server.newAuction(userId, auctionSaleItem);
                             if(result2 == -1){
@@ -69,19 +71,20 @@ public class Client{
                             }
                             break;
                         case 4:
+                            Scanner scanner4 = new Scanner(System.in);
                             System.out.println("Enter an Auction ID:");
-                            AuctionItem result4 = server.getSpec(scanner.nextInt());
+                            AuctionItem result4 = server.getSpec(scanner4.nextInt());
                             System.out.println("Item Name - " + result4.name);
                             System.out.println("Item ID - " + result4.itemID);
                             System.out.println("Item Description - " + result4.description);
                             System.out.println("Item's highest bid - " + result4.highestBid);
                             break;
                         case 5:
-                            BufferedReader bufferedReader2 = new BufferedReader(new InputStreamReader(System.in));
+                            Scanner scanner5 = new Scanner(System.in);
                             System.out.println("Enter the owner ID: ");
-                            int userOwner = bufferedReader2.read();
+                            int userOwner = scanner5.nextInt();;
                             System.out.println("Enter the auction ID: ");
-                            int auctionID = bufferedReader2.read();
+                            int auctionID = scanner5.nextInt();;
                             AuctionCloseInfo result5 = server.closeAuction(userOwner, auctionID);
                             if(result5 == null){
                                 System.out.println("Error! Auction does not exist!");
@@ -91,13 +94,13 @@ public class Client{
                             }
                             break;
                         case 6:
-                            BufferedReader bufferedReader3 = new BufferedReader(new InputStreamReader(System.in));
+                            Scanner scanner6 = new Scanner(System.in);
                             System.out.println("Enter the user ID: ");
-                            int userID = bufferedReader3.read();
+                            int userID = scanner6.nextInt();;
                             System.out.println("Enter the auction ID: ");
-                            int auctionId = bufferedReader3.read();
+                            int auctionId = scanner6.nextInt();;
                             System.out.println("Enter the bidding price: ");
-                            int price = bufferedReader3.read();
+                            int price = scanner6.nextInt();;
                             Boolean result6 = server.bid(userID, auctionId, price);
                             if(result6){
                                 System.out.println("Bid is placed successfully!");
@@ -106,8 +109,10 @@ public class Client{
                             }
                             break;
                         case 7:
+                            Scanner scanner7 = new Scanner(System.in);
                             System.out.println("Press any key to exit.");
-                            scanner.nextLine();
+                            scanner7.next();
+                            System.exit(0);
                             Runtime.getRuntime().exec("clear");
                             break;
                     }

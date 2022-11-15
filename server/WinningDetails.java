@@ -1,9 +1,9 @@
 public class WinningDetails {
     int winningID;
     AuctionItem auctionItem;
-    double lastBetPrice;
+    int lastBetPrice;
 
-    public WinningDetails(int winningID, AuctionItem auctionItem, double lastBetPrice) {
+    public WinningDetails(int winningID, AuctionItem auctionItem, int lastBetPrice) {
         this.winningID = winningID;
         this.auctionItem = auctionItem;
         this.lastBetPrice = lastBetPrice;
@@ -33,7 +33,7 @@ public class WinningDetails {
         this.auctionItem = auctionItem;
     }
 
-    public void setLastBetPrice(double lastBetPrice) {
+    public void setLastBetPrice(int lastBetPrice) {
         this.lastBetPrice = lastBetPrice;
     }
 }

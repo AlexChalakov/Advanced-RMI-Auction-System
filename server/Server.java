@@ -5,6 +5,7 @@ import java.rmi.server.UnicastRemoteObject;
 import java.security.*;
 import java.util.HashMap;
 import java.util.List;
+import java.util.*;
 
 public class Server implements Auction{
 
@@ -13,7 +14,7 @@ public class Server implements Auction{
     private AuctionItem[] aItem;
 
     //A list of all the won bid's details
-    private List<WinningDetails> winBidDetails;
+    private List<WinningDetails> winBidDetails = new ArrayList<WinningDetails>();
 
     //hash map of users - userID - email
     private HashMap<Integer, String> users = new HashMap<>();
@@ -23,13 +24,13 @@ public class Server implements Auction{
 
     public Server() throws NoSuchAlgorithmException {
         super();
-        aItem = new AuctionItem[2];
+        /*aItem = new AuctionItem[2];
 
         item = new AuctionItem();
         item.itemID = 1;
         item.name = "Bike";
         item.description = "Has two wheels";
-        item.highestBid = 100;
+        item.highestBid = 100;*/
     }
 
     public static void main(String[] args) {
@@ -62,6 +63,7 @@ public class Server implements Auction{
         //check if the user exists
         if(!users.containsValue(email)){
             users.put(users.size() + 1, email);
+            System.out.println(users);
             return users.size();
         } else {
             return 0;
@@ -82,7 +84,7 @@ public class Server implements Auction{
         if(!users.containsKey(userID)){
             String errorMsg = "User ID does not exist in the system";
             System.out.println(errorMsg);
-            return 1;
+            return -1;
         }
         //check if auction exists, return its id
 
@@ -96,6 +98,10 @@ public class Server implements Auction{
         
         //putting itemID and user in auction hashmap
         auctionItemsById.put(auctionItem.itemID, userID);
+        System.out.println(userID);
+        System.out.println(auctionItem.itemID);
+        System.out.println(auctionItem.highestBid);
+        System.out.println("Item array is " + auctionItemsById.size());
         //putting userID and the item in the winning details
         WinningDetails winningDetails = new WinningDetails(userID, auctionItem, auctionItem.highestBid);
         winBidDetails.add(winningDetails);
@@ -106,8 +112,9 @@ public class Server implements Auction{
     @Override
     public AuctionItem[] listItems() throws RemoteException {
         AuctionItem[] auctionItem = new AuctionItem[auctionItemsById.size()];
+        aItem = new AuctionItem[auctionItem.length];
         for(int i = 0; i < auctionItem.length; i++){
-            aItem[i] = auctionItem[auctionItemsById.get(i)];
+            aItem[i] = winBidDetails.get(i).auctionItem;
         }
         return aItem;
     }
