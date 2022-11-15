@@ -77,8 +77,33 @@ public class Client{
                             System.out.println("Item's highest bid - " + result4.highestBid);
                             break;
                         case 5:
+                            BufferedReader bufferedReader2 = new BufferedReader(new InputStreamReader(System.in));
+                            System.out.println("Enter the owner ID: ");
+                            int userOwner = bufferedReader2.read();
+                            System.out.println("Enter the auction ID: ");
+                            int auctionID = bufferedReader2.read();
+                            AuctionCloseInfo result5 = server.closeAuction(userOwner, auctionID);
+                            if(result5 == null){
+                                System.out.println("Error! Auction does not exist!");
+                            } else {
+                                System.out.println("Winning email: " + result5.winningEmail);
+                                System.out.println("Winning price: " + result5.winningPrice);
+                            }
                             break;
                         case 6:
+                            BufferedReader bufferedReader3 = new BufferedReader(new InputStreamReader(System.in));
+                            System.out.println("Enter the user ID: ");
+                            int userID = bufferedReader3.read();
+                            System.out.println("Enter the auction ID: ");
+                            int auctionId = bufferedReader3.read();
+                            System.out.println("Enter the bidding price: ");
+                            int price = bufferedReader3.read();
+                            Boolean result6 = server.bid(userID, auctionId, price);
+                            if(result6){
+                                System.out.println("Bid is placed successfully!");
+                            } else {
+                                System.out.println("Error! Bid is not accepted!");
+                            }
                             break;
                         case 7:
                             System.out.println("Press any key to exit.");
