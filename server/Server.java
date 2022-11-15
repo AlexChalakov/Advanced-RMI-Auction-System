@@ -13,7 +13,7 @@ public class Server implements Auction{
     private AuctionItem item;
     private AuctionItem[] aItem;
 
-    //A list of all the won bid's details
+    //A list of all the items in auctions that are going to be bid on
     private List<WinningDetails> winBidDetails = new ArrayList<WinningDetails>();
 
     //hash map of users - userID - email
@@ -123,6 +123,7 @@ public class Server implements Auction{
     public AuctionCloseInfo closeAuction(int userID, int itemID) throws RemoteException {
         //check if auction exists
         if(auctionItemsById.get(itemID) == null){
+            System.out.println("Auction does not exist!");
             return null;
         }
 
@@ -134,11 +135,14 @@ public class Server implements Auction{
         auctionItemsById.remove(itemID, userID);
         winBidDetails.remove(winningDetails);
 
+        System.out.println("Last bet price " + winningDetails.getLastBetPrice());
+        //System.out.println("Highest bid " + winningDetails.getAuctionItem().highestBid);
+
         //check the last bet price
-        if(winningDetails.getLastBetPrice() >= winningDetails.getAuctionItem().highestBid) {
+        /*if(winningDetails.getLastBetPrice() > winningDetails.getAuctionItem().highestBid) {
             AuctionCloseInfo auctionCloseInfo = createCloseInfo(null, 0);
             return auctionCloseInfo;
-        }
+        }*/
 
         //getting the auction close info - getting the email from the function and the highest bid from the winning details
         AuctionCloseInfo auctionCloseInfo = createCloseInfo(getEmail(winningDetails.winningID), winningDetails.getAuctionItem().highestBid);
