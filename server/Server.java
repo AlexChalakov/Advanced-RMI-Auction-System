@@ -71,7 +71,7 @@ public class Server implements Auction{
     }
 
     @Override
-    public int newAuction(int userID, AuctionSaleItem item) throws RemoteException {
+    public synchronized int newAuction(int userID, AuctionSaleItem item) throws RemoteException {
         //check if user exists in system
         if(!users.containsKey(userID)){
             String errorMsg = "User ID does not exist in the system";
@@ -117,7 +117,7 @@ public class Server implements Auction{
     }
 
     @Override
-    public AuctionCloseInfo closeAuction(int userID, int itemID) throws RemoteException {
+    public synchronized AuctionCloseInfo closeAuction(int userID, int itemID) throws RemoteException {
         //check if auction exists
         if(auctionItemsById.get(itemID) == null){
             System.out.println("Auction does not exist!");
@@ -155,7 +155,7 @@ public class Server implements Auction{
     }
 
     @Override
-    public boolean bid(int userID, int itemID, int price) throws RemoteException {
+    public synchronized boolean bid(int userID, int itemID, int price) throws RemoteException {
         
         //get item from list of winning details by the itemID
         WinningDetails winningDetails = winBidDetails.get(itemID - 1);
