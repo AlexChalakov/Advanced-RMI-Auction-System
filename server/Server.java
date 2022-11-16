@@ -9,8 +9,7 @@ import java.util.*;
 
 public class Server implements Auction{
 
-    //used for just creating initial item
-    private AuctionItem item;
+    //Used for listing the items
     private AuctionItem[] aItem;
 
     //A list of all the items in auctions that are going to be bid on
@@ -24,13 +23,6 @@ public class Server implements Auction{
 
     public Server() throws NoSuchAlgorithmException {
         super();
-        /*aItem = new AuctionItem[2];
-
-        item = new AuctionItem();
-        item.itemID = 1;
-        item.name = "Bike";
-        item.description = "Has two wheels";
-        item.highestBid = 100;*/
     }
 
     public static void main(String[] args) {
@@ -116,6 +108,11 @@ public class Server implements Auction{
         for(int i = 0; i < auctionItem.length; i++){
             aItem[i] = winBidDetails.get(i).auctionItem;
         }
+
+        if(auctionItem.length == 0){
+            System.out.println("There are no open auctions at the moment!");
+        }
+        
         return aItem;
     }
 
@@ -127,22 +124,29 @@ public class Server implements Auction{
             return null;
         }
 
-        //get the itemID and notate it towards the winning details
-        Integer AuctionItemID = auctionItemsById.get(itemID);
-        WinningDetails winningDetails = new WinningDetails(AuctionItemID);
+        //loop through the winning details (where items are put in auctions) 
+        //for an item that's real and corresponding to the itemID in the arguments, match it and remove it
+        WinningDetails winningDetails = null;
+        for(WinningDetails auctionDetails : winBidDetails){
+            if(auctionDetails.getAuctionItem().itemID == itemID){
+                winningDetails = auctionDetails;
+                break;
+            }
+        }
 
         //close the auction by removing the item and the user ID from the auction
         auctionItemsById.remove(itemID, userID);
         winBidDetails.remove(winningDetails);
 
-        System.out.println("Last bet price " + winningDetails.getLastBetPrice());
+        //System.out.println("Last bet price " + winningDetails.getLastBetPrice());
         //System.out.println("Highest bid " + winningDetails.getAuctionItem().highestBid);
 
         //check the last bet price
-        /*if(winningDetails.getLastBetPrice() > winningDetails.getAuctionItem().highestBid) {
+        if(winningDetails.getAuctionItem().highestBid < winningDetails.getLastBetPrice()) {
+            System.out.println("There's no winner for this auction.");
             AuctionCloseInfo auctionCloseInfo = createCloseInfo(null, 0);
             return auctionCloseInfo;
-        }*/
+        }
 
         //getting the auction close info - getting the email from the function and the highest bid from the winning details
         AuctionCloseInfo auctionCloseInfo = createCloseInfo(getEmail(winningDetails.winningID), winningDetails.getAuctionItem().highestBid);
@@ -154,11 +158,13 @@ public class Server implements Auction{
     public boolean bid(int userID, int itemID, int price) throws RemoteException {
         
         //get item from list of winning details by the itemID
-        WinningDetails winningDetails = winBidDetails.get(itemID);
+        WinningDetails winningDetails = winBidDetails.get(itemID - 1);
         AuctionItem auctionItem = winningDetails.getAuctionItem();
 
         //check if price is smaller than highest bid
+        //a bid shouldn't be smaller than the highest current offer so we crash it
         if(auctionItem.highestBid >= price) {
+            System.out.println("Bid is smaller than the highest offer at the moment!");
             return false;
         }
 
@@ -171,11 +177,11 @@ public class Server implements Auction{
     }
 
     private AuctionCloseInfo createCloseInfo(String winningEmail, int winningPrice) {
-        AuctionCloseInfo aCloseInfo = new AuctionCloseInfo();
-        aCloseInfo.winningEmail = winningEmail;
-        aCloseInfo.winningPrice = winningPrice;
+        AuctionCloseInfo auctionCloseInfo = new AuctionCloseInfo();
+        auctionCloseInfo.winningEmail = winningEmail;
+        auctionCloseInfo.winningPrice = winningPrice;
 
-        return aCloseInfo;
+        return auctionCloseInfo;
         
     }
 }
