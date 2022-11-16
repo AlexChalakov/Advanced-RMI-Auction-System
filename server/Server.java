@@ -13,7 +13,7 @@ public class Server implements Auction{
     private AuctionItem[] aItem;
 
     //A list of all the items in auctions that are going to be bid on
-    private List<WinningDetails> winBidDetails = new ArrayList<WinningDetails>();
+    private List<AuctionDetails> winBidDetails = new ArrayList<AuctionDetails>();
 
     //hash map of users - userID - email
     private HashMap<Integer, String> users = new HashMap<>();
@@ -41,9 +41,9 @@ public class Server implements Auction{
 
     @Override
     public AuctionItem getSpec(int itemID) throws RemoteException {
-        for(WinningDetails winningDetails: winBidDetails){
-            if(winningDetails.winningID == itemID){
-                return winningDetails.getAuctionItem();
+        for(AuctionDetails auctionDetails: winBidDetails){
+            if(auctionDetails.winningID == itemID){
+                return auctionDetails.getAuctionItem();
             }
         }
 
@@ -58,7 +58,7 @@ public class Server implements Auction{
             System.out.println(users);
             return users.size();
         } else {
-            return 0;
+            return -1;
         }
     }
     
@@ -89,14 +89,16 @@ public class Server implements Auction{
         auctionItem.highestBid = item.reservePrice;
         
         //putting itemID and user in auction hashmap
+        // + stating this item has been created by this user
         auctionItemsById.put(auctionItem.itemID, userID);
         System.out.println(userID);
         System.out.println(auctionItem.itemID);
         System.out.println(auctionItem.highestBid);
         System.out.println("Item array is " + auctionItemsById.size());
-        //putting userID and the item in the winning details
-        WinningDetails winningDetails = new WinningDetails(userID, auctionItem, auctionItem.highestBid);
-        winBidDetails.add(winningDetails);
+        //putting userID and the item in the auction details
+        AuctionDetails auctionDetails = new AuctionDetails(userID, auctionItem, auctionItem.highestBid);
+        //putting it in the list of auctions
+        winBidDetails.add(auctionDetails);
 
         return auctionItem.itemID;
     }
@@ -104,52 +106,57 @@ public class Server implements Auction{
     @Override
     public AuctionItem[] listItems() throws RemoteException {
         AuctionItem[] auctionItem = new AuctionItem[auctionItemsById.size()];
-        aItem = new AuctionItem[auctionItem.length];
-        for(int i = 0; i < auctionItem.length; i++){
-            aItem[i] = winBidDetails.get(i).auctionItem;
-        }
-
         if(auctionItem.length == 0){
             System.out.println("There are no open auctions at the moment!");
         }
-        
+
+        aItem = new AuctionItem[auctionItem.length];
+
+        for(int i = 0; i < auctionItem.length; i++){
+            aItem[i] = winBidDetails.get(i).auctionItem;
+        }
         return aItem;
     }
 
     @Override
     public synchronized AuctionCloseInfo closeAuction(int userID, int itemID) throws RemoteException {
+        //making sure only the owner of the auction can close it
+        if(auctionItemsById.get(itemID) != userID){
+            System.out.println("You have no authority to close the auction!");
+            return null;
+        }
         //check if auction exists
         if(auctionItemsById.get(itemID) == null){
             System.out.println("Auction does not exist!");
             return null;
         }
 
-        //loop through the winning details (where items are put in auctions) 
+        //loop through the auction details (where items are put in auctions) 
         //for an item that's real and corresponding to the itemID in the arguments, match it and remove it
-        WinningDetails winningDetails = null;
-        for(WinningDetails auctionDetails : winBidDetails){
-            if(auctionDetails.getAuctionItem().itemID == itemID){
-                winningDetails = auctionDetails;
+        AuctionDetails auctionDetails = null;
+        for(AuctionDetails auctDetails : winBidDetails){
+            if(auctDetails.getAuctionItem().itemID == itemID){
+                auctionDetails = auctDetails;
                 break;
             }
         }
 
         //close the auction by removing the item and the user ID from the auction
         auctionItemsById.remove(itemID, userID);
-        winBidDetails.remove(winningDetails);
+        winBidDetails.remove(auctionDetails);
 
         //System.out.println("Last bet price " + winningDetails.getLastBetPrice());
         //System.out.println("Highest bid " + winningDetails.getAuctionItem().highestBid);
 
         //check the last bet price
-        if(winningDetails.getAuctionItem().highestBid < winningDetails.getLastBetPrice()) {
+        if(auctionDetails.getAuctionItem().highestBid < auctionDetails.getLastBetPrice()) {
             System.out.println("There's no winner for this auction.");
             AuctionCloseInfo auctionCloseInfo = createCloseInfo(null, 0);
             return auctionCloseInfo;
         }
 
         //getting the auction close info - getting the email from the function and the highest bid from the winning details
-        AuctionCloseInfo auctionCloseInfo = createCloseInfo(getEmail(winningDetails.winningID), winningDetails.getAuctionItem().highestBid);
+        AuctionCloseInfo auctionCloseInfo = createCloseInfo(getEmail(auctionDetails.winningID), auctionDetails.getAuctionItem().highestBid);
 
         return auctionCloseInfo;
     }
@@ -157,21 +164,21 @@ public class Server implements Auction{
     @Override
     public synchronized boolean bid(int userID, int itemID, int price) throws RemoteException {
         
-        //get item from list of winning details by the itemID
-        WinningDetails winningDetails = winBidDetails.get(itemID - 1);
-        AuctionItem auctionItem = winningDetails.getAuctionItem();
+        //get item from list of auction details by the itemID
+        AuctionDetails auctionDetails = winBidDetails.get(itemID - 1);
+        AuctionItem auctionItem = auctionDetails.getAuctionItem();
 
         //check if price is smaller than highest bid
         //a bid shouldn't be smaller than the highest current offer so we crash it
         if(auctionItem.highestBid >= price) {
-            System.out.println("Bid is smaller than the highest offer at the moment!");
+            System.out.println("Bid is smaller or equal to the highest offer at the moment!");
             return false;
         }
 
         //make price the highest bid
-        winningDetails.getAuctionItem().highestBid = price;
+        auctionDetails.getAuctionItem().highestBid = price;
         //set the person having the highest bid
-        winningDetails.setWinningID(userID);
+        auctionDetails.setWinningID(userID);
 
         return true;
     }
@@ -182,6 +189,18 @@ public class Server implements Auction{
         auctionCloseInfo.winningPrice = winningPrice;
 
         return auctionCloseInfo;
-        
+    }
+
+    //Authentication
+    @Override
+    public byte[] challenge(int userID) throws RemoteException {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public boolean authenticate(int userID, byte[] signature) throws RemoteException {
+        // TODO Auto-generated method stub
+        return false;
     }
 }

@@ -4,6 +4,10 @@ import java.rmi.RemoteException;
 public interface Auction extends Remote {
     public int newUser(String email) throws RemoteException;
 
+    public byte[] challenge(int userID) throws RemoteException;
+
+    public boolean authenticate(int userID, byte signature[]) throws RemoteException;
+
     public AuctionItem getSpec(int itemID) throws RemoteException;
 
     public int newAuction(int userID, AuctionSaleItem item) throws RemoteException;

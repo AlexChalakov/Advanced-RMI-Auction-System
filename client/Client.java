@@ -61,6 +61,9 @@ public class Client{
                             break;
                         case 3: 
                             AuctionItem[] result3 = server.listItems();
+                            if(result3.length == 0){
+                                System.out.println("No available items to list.");
+                            }
                             for(int i = 0; i < result3.length; i++){
                                 System.out.println("Auction's item ID is " + result3[i].itemID);
                                 System.out.println("Auction's item name is " + result3[i].name);
@@ -85,7 +88,7 @@ public class Client{
                             int auctionID = scanner5.nextInt();;
                             AuctionCloseInfo result5 = server.closeAuction(userOwner, auctionID);
                             if(result5 == null){
-                                System.out.println("Error! Auction does not exist!");
+                                System.out.println("Error:Auction does not exist or user has no permission to close it!");
                             } else {
                                 System.out.println("Winning email: " + result5.winningEmail);
                                 System.out.println("Winning price: " + result5.winningPrice);

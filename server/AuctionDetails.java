@@ -1,15 +1,15 @@
-public class WinningDetails {
+public class AuctionDetails {
     int winningID;
     AuctionItem auctionItem;
     int lastBetPrice;
 
-    public WinningDetails(int winningID, AuctionItem auctionItem, int lastBetPrice) {
+    public AuctionDetails(int winningID, AuctionItem auctionItem, int lastBetPrice) {
         this.winningID = winningID;
         this.auctionItem = auctionItem;
         this.lastBetPrice = lastBetPrice;
     }
 
-    public WinningDetails(Integer winningID) {
+    public AuctionDetails(Integer winningID) {
         this.winningID = winningID;
     }
 
