@@ -7,6 +7,8 @@ import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.security.*;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.X509EncodedKeySpec;
 import java.util.HashMap;
 import java.util.List;
 import java.util.*;
@@ -29,14 +31,18 @@ public class Server implements Auction{
 
     private PrivateKey privateKey;
 
+    private NewUserInfo newUserInfo;
+
     public Server() throws NoSuchAlgorithmException {
         super();
 
+        //generating server keys
         KeyPairGenerator keyPGenerator = KeyPairGenerator.getInstance("RSA");
         keyPGenerator.initialize(2048);
         KeyPair keyPair = keyPGenerator.generateKeyPair();
         publicKey = keyPair.getPublic();
         privateKey = keyPair.getPrivate();
+        //putting them in the files
         try {
             Files.write(Paths.get("../keys/server_public.key"), publicKey.getEncoded());
             Files.write(Paths.get("../keys/server_private.key"), privateKey.getEncoded());
@@ -78,7 +84,7 @@ public class Server implements Auction{
             users.put(users.size() + 1, email);
             System.out.println(users);
 
-            NewUserInfo newUserInfo = new NewUserInfo();
+            newUserInfo = new NewUserInfo();
 
             KeyPairGenerator keyPG;
             try {
@@ -236,6 +242,7 @@ public class Server implements Auction{
     public byte[] challenge(int userID) throws RemoteException {
         try {
             Signature privateKeySignature = Signature.getInstance("SHA256withRSA");
+            //Using the server keys to sign the message
             privateKeySignature.initSign(privateKey);
             privateKeySignature.update("auction".getBytes(StandardCharsets.UTF_8));
 
@@ -251,8 +258,14 @@ public class Server implements Auction{
     @Override
     public boolean authenticate(int userID, byte[] signature) throws RemoteException {
         try {
+            //getting the client keys
+            KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+            byte[] clientPublicKey = newUserInfo.publicKey;
+            PublicKey publicClientKey = keyFactory.generatePublic(new X509EncodedKeySpec(clientPublicKey));
+
+            //verifying signature with email
             Signature publicKeySignature = Signature.getInstance("SHA256withRSA");
-            publicKeySignature.initVerify(publicKey);
+            publicKeySignature.initVerify(publicClientKey);
             String email = getEmail(userID);
             System.out.println("Email: " + email);
             publicKeySignature.update(email.getBytes(StandardCharsets.UTF_8));
@@ -260,7 +273,7 @@ public class Server implements Auction{
             System.out.println("Signature is correct: " + isAuthenticated);
             System.out.println("Authentication is being processed.");
             return isAuthenticated;
-        } catch (NoSuchAlgorithmException | SignatureException | InvalidKeyException e) {
+        } catch (NoSuchAlgorithmException | SignatureException | InvalidKeyException | InvalidKeySpecException e) {
             e.printStackTrace();
         }
         return false;

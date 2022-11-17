@@ -52,12 +52,13 @@ public class Client{
                             PublicKey publicClientKey = keyFactory.generatePublic(new X509EncodedKeySpec(clientPublicKey));
                             PrivateKey privateClientKey = keyFactory.generatePrivate(new PKCS8EncodedKeySpec(clientPrivateKey));
 
-                            //calls the challenge with the auction sign
-                            byte[] signedMessage = server.challenge(result1.userID);
-
                             //read the bytes and put them back into public and private keys
+                            //getting those server keys from the file to verify the message
                             byte[] publicKeyInBytes = Files.readAllBytes(Paths.get("../keys/server_public.key"));
                             PublicKey publicFileKey = keyFactory.generatePublic(new X509EncodedKeySpec(publicKeyInBytes));
+
+                            //calls the challenge with the auction sign
+                            byte[] signedMessage = server.challenge(result1.userID);
                             
                             //verify auction message to prove identity
                             Signature publicKeySignature = Signature.getInstance("SHA256withRSA");
@@ -72,11 +73,11 @@ public class Client{
                             privateKeySignature.initSign(privateClientKey);
                             privateKeySignature.update(email.getBytes(StandardCharsets.UTF_8));
 
-                            byte[] sign = privateKeySignature.sign();
+                            byte[] signBack = privateKeySignature.sign();
                             System.out.println("Message is signed successfully!");
 
                             //Server proves its identity - authentication is true
-                            boolean authenticated = server.authenticate(result1.userID, sign);
+                            boolean authenticated = server.authenticate(result1.userID, signBack);
                             System.out.println("User ID is: " + result1.userID);
                             System.out.println("Signed Message: " + signedMessage);
                             System.out.println("Authentication: " + authenticated);
