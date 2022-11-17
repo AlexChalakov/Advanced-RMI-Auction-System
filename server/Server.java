@@ -237,8 +237,7 @@ public class Server implements Auction{
         try {
             Signature privateKeySignature = Signature.getInstance("SHA256withRSA");
             privateKeySignature.initSign(privateKey);
-            String email = getEmail(userID);
-            privateKeySignature.update(email.getBytes(StandardCharsets.UTF_8));
+            privateKeySignature.update("auction".getBytes(StandardCharsets.UTF_8));
 
             byte[] sign = privateKeySignature.sign();
             System.out.println("Message is signed successfully!");
@@ -254,9 +253,11 @@ public class Server implements Auction{
         try {
             Signature publicKeySignature = Signature.getInstance("SHA256withRSA");
             publicKeySignature.initVerify(publicKey);
-            publicKeySignature.update("auction".getBytes(StandardCharsets.UTF_8));
-
+            String email = getEmail(userID);
+            System.out.println("Email: " + email);
+            publicKeySignature.update(email.getBytes(StandardCharsets.UTF_8));
             boolean isAuthenticated = publicKeySignature.verify(signature);
+            System.out.println("Signature is correct: " + isAuthenticated);
             System.out.println("Authentication is being processed.");
             return isAuthenticated;
         } catch (NoSuchAlgorithmException | SignatureException | InvalidKeyException e) {

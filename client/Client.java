@@ -1,18 +1,20 @@
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
+import java.security.KeyFactory;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.Signature;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.X509EncodedKeySpec;
 import java.util.Scanner;
 
 public class Client{
     public static void main(String[] args) {
 
-        /*if (args.length < 1) {
-            System.out.println("Usage: java Client n");
-            return;
-        }*/
-
         try {
-            //challenge = byte[]
-            //Authenticate(byte[])
             //Notes about encryption
             //Sign a message with out private key - challenge
             //and verify the signature with the public key - authenticate
@@ -43,8 +45,38 @@ public class Client{
                                 System.out.println("Error! User has not been created succesfully!");
                                 break;
                             }
+                            //getting the client keys
+                            KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+                            byte[] clientPublicKey = result1.publicKey;
+                            byte[] clientPrivateKey = result1.privateKey;
+                            PublicKey publicClientKey = keyFactory.generatePublic(new X509EncodedKeySpec(clientPublicKey));
+                            PrivateKey privateClientKey = keyFactory.generatePrivate(new PKCS8EncodedKeySpec(clientPrivateKey));
+
+                            //calls the challenge with the auction sign
                             byte[] signedMessage = server.challenge(result1.userID);
-                            boolean authenticated = server.authenticate(result1.userID, signedMessage);
+
+                            //read the bytes and put them back into public and private keys
+                            byte[] publicKeyInBytes = Files.readAllBytes(Paths.get("../keys/server_public.key"));
+                            PublicKey publicFileKey = keyFactory.generatePublic(new X509EncodedKeySpec(publicKeyInBytes));
+                            
+                            //verify auction message to prove identity
+                            Signature publicKeySignature = Signature.getInstance("SHA256withRSA");
+                            publicKeySignature.initVerify(publicFileKey);
+                            publicKeySignature.update("auction".getBytes(StandardCharsets.UTF_8));
+                            boolean check = publicKeySignature.verify(signedMessage);
+
+                            System.out.println("Signature is correct: " + check);
+
+                            //Client sends the Server a challenge
+                            Signature privateKeySignature = Signature.getInstance("SHA256withRSA");
+                            privateKeySignature.initSign(privateClientKey);
+                            privateKeySignature.update(email.getBytes(StandardCharsets.UTF_8));
+
+                            byte[] sign = privateKeySignature.sign();
+                            System.out.println("Message is signed successfully!");
+
+                            //Server proves its identity - authentication is true
+                            boolean authenticated = server.authenticate(result1.userID, sign);
                             System.out.println("User ID is: " + result1.userID);
                             System.out.println("Signed Message: " + signedMessage);
                             System.out.println("Authentication: " + authenticated);
