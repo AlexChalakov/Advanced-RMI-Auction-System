@@ -1,3 +1,6 @@
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
@@ -23,6 +26,19 @@ public class Server implements Auction{
 
     public Server() throws NoSuchAlgorithmException {
         super();
+
+        KeyPairGenerator keyPGenerator = KeyPairGenerator.getInstance("RSA");
+        keyPGenerator.initialize(2048);
+        KeyPair keyPair = keyPGenerator.generateKeyPair();
+        PublicKey publicKey = keyPair.getPublic();
+        PrivateKey privateKey = keyPair.getPrivate();
+        try {
+            Files.write(Paths.get("../keys/server_public.key"), publicKey.getEncoded());
+            Files.write(Paths.get("../keys/server_private.key"), privateKey.getEncoded());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
     }
 
     public static void main(String[] args) {

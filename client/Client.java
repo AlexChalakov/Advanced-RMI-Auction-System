@@ -11,6 +11,9 @@ public class Client{
         }*/
 
         try {
+            //challenge = byte[]
+            //Authenticate(byte[])
+
             String name = "Auction";
             Registry registry = LocateRegistry.getRegistry("localhost");
             Auction server = (Auction) registry.lookup(name);
