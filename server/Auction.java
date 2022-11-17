@@ -2,7 +2,7 @@ import java.rmi.Remote;
 import java.rmi.RemoteException;
 
 public interface Auction extends Remote {
-    public int newUser(String email) throws RemoteException;
+    public NewUserInfo newUser(String email) throws RemoteException;
 
     public byte[] challenge(int userID) throws RemoteException;
 

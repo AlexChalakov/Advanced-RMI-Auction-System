@@ -13,6 +13,9 @@ public class Client{
         try {
             //challenge = byte[]
             //Authenticate(byte[])
+            //Notes about encryption
+            //Sign a message with out private key - challenge
+            //and verify the signature with the public key - authenticate
 
             String name = "Auction";
             Registry registry = LocateRegistry.getRegistry("localhost");
@@ -35,11 +38,16 @@ public class Client{
                             Scanner scanner1 = new Scanner(System.in);
                             System.out.println("Please enter your email address:");
                             String email = scanner1.nextLine();
-                            int result1 = server.newUser(email);
-                            if(result1 == -1){
+                            NewUserInfo result1 = server.newUser(email);
+                            if(result1 == null){
                                 System.out.println("Error! User has not been created succesfully!");
+                                break;
                             }
-                            System.out.println("User ID is: " + result1);
+                            byte[] signedMessage = server.challenge(result1.userID);
+                            boolean authenticated = server.authenticate(result1.userID, signedMessage);
+                            System.out.println("User ID is: " + result1.userID);
+                            System.out.println("Signed Message: " + signedMessage);
+                            System.out.println("Authentication: " + authenticated);
                             break;
 
                         case 2:

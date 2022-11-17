@@ -1,4 +1,5 @@
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.rmi.RemoteException;
@@ -24,14 +25,18 @@ public class Server implements Auction{
     //hash map of auction items - itemID - userID (one user can have many items)
     private HashMap<Integer, Integer> auctionItemsById = new HashMap<>();
 
+    private PublicKey publicKey;
+
+    private PrivateKey privateKey;
+
     public Server() throws NoSuchAlgorithmException {
         super();
 
         KeyPairGenerator keyPGenerator = KeyPairGenerator.getInstance("RSA");
         keyPGenerator.initialize(2048);
         KeyPair keyPair = keyPGenerator.generateKeyPair();
-        PublicKey publicKey = keyPair.getPublic();
-        PrivateKey privateKey = keyPair.getPrivate();
+        publicKey = keyPair.getPublic();
+        privateKey = keyPair.getPrivate();
         try {
             Files.write(Paths.get("../keys/server_public.key"), publicKey.getEncoded());
             Files.write(Paths.get("../keys/server_private.key"), privateKey.getEncoded());
@@ -67,14 +72,32 @@ public class Server implements Auction{
     }
 
     @Override
-    public int newUser(String email) throws RemoteException {
+    public NewUserInfo newUser(String email) throws RemoteException {
         //check if the user exists
         if(!users.containsValue(email)){
             users.put(users.size() + 1, email);
             System.out.println(users);
-            return users.size();
+
+            NewUserInfo newUserInfo = new NewUserInfo();
+
+            KeyPairGenerator keyPG;
+            try {
+                keyPG = KeyPairGenerator.getInstance("RSA");
+                keyPG.initialize(2048);
+                KeyPair keyPair = keyPG.generateKeyPair();
+                PublicKey publKey = keyPair.getPublic();
+                PrivateKey prvKey = keyPair.getPrivate();
+
+                newUserInfo.userID = users.size();
+                newUserInfo.publicKey = publKey.getEncoded();
+                newUserInfo.privateKey = prvKey.getEncoded();
+            } catch (NoSuchAlgorithmException e) {
+                e.printStackTrace();
+            }
+
+            return newUserInfo;
         } else {
-            return -1;
+            return null;
         }
     }
     
@@ -208,15 +231,37 @@ public class Server implements Auction{
     }
 
     //Authentication
+    //Challenge is signing the message with the private key
     @Override
     public byte[] challenge(int userID) throws RemoteException {
-        // TODO Auto-generated method stub
+        try {
+            Signature privateKeySignature = Signature.getInstance("SHA256withRSA");
+            privateKeySignature.initSign(privateKey);
+            String email = getEmail(userID);
+            privateKeySignature.update(email.getBytes(StandardCharsets.UTF_8));
+
+            byte[] sign = privateKeySignature.sign();
+            System.out.println("Message is signed successfully!");
+            return sign;
+        } catch (NoSuchAlgorithmException | InvalidKeyException | SignatureException e) {
+            e.printStackTrace();
+        }
         return null;
     }
 
     @Override
     public boolean authenticate(int userID, byte[] signature) throws RemoteException {
-        // TODO Auto-generated method stub
+        try {
+            Signature publicKeySignature = Signature.getInstance("SHA256withRSA");
+            publicKeySignature.initVerify(publicKey);
+            publicKeySignature.update("auction".getBytes(StandardCharsets.UTF_8));
+
+            boolean isAuthenticated = publicKeySignature.verify(signature);
+            System.out.println("Authentication is being processed.");
+            return isAuthenticated;
+        } catch (NoSuchAlgorithmException | SignatureException | InvalidKeyException e) {
+            e.printStackTrace();
+        }
         return false;
     }
 }
