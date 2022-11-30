@@ -278,4 +278,14 @@ public class Server implements Auction{
         }
         return false;
     }
+
+    @Override
+    public int getPrimaryReplicaID() throws RemoteException {
+        return 0;
+    }
+
+    public Server cloneServer() throws NoSuchAlgorithmException{
+        Server server = new Server();
+        return server;
+    }
 }

@@ -17,4 +17,6 @@ public interface Auction extends Remote {
     public AuctionCloseInfo closeAuction(int userID, int itemID) throws RemoteException;
 
     public boolean bid(int userID, int itemID, int price) throws RemoteException;
+
+    public int getPrimaryReplicaID() throws RemoteException;
 }
