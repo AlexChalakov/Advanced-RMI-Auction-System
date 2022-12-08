@@ -1,4 +1,6 @@
-public class AuctionDetails {
+import java.io.Serializable;
+
+public class AuctionDetails implements Serializable{
     int winningID;
     AuctionItem auctionItem;
     int lastBetPrice;

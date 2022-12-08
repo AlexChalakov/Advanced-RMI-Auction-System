@@ -4,15 +4,14 @@ import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.security.*;
-import java.util.HashMap;
-import java.util.List;
 import java.util.*;
-public class Replica implements Auction, ReplicaComms{
+
+public class Replica implements ReplicaComms{
 
     private AuctionItem[] aItem;
     private NewUserInfo newUserInfo;
 
-    private List<AuctionDetails> winBidDetails = new ArrayList<AuctionDetails>();
+    private List<AuctionDetails> winBidDetails = new ArrayList<>();
     private HashMap<Integer, String> users = new HashMap<>();
     private HashMap<Integer, Integer> auctionItemsById = new HashMap<>();
 
@@ -35,7 +34,17 @@ public class Replica implements Auction, ReplicaComms{
             Auction stub = (Auction) UnicastRemoteObject.exportObject(replica, 0);
             Registry registry = LocateRegistry.getRegistry("localhost");
             registry.rebind(name, stub);
+
             System.out.println("Replica ready");
+
+            /**try {
+                ReplicaComms replicaComms = (ReplicaComms) registry.lookup(name);
+                if(){
+                    replicaComms
+                }
+            } catch (NotBoundException e) {
+                e.printStackTrace();
+            }*/
         } catch (RemoteException e) {
             System.err.println("Exception:");
             e.printStackTrace();
@@ -76,7 +85,12 @@ public class Replica implements Auction, ReplicaComms{
             } catch (NoSuchAlgorithmException e) {
                 e.printStackTrace();
             }
-
+            try {
+                updateAll();
+            } catch (Exception e) {
+                System.out.println("update fail");
+                e.printStackTrace();
+            }
             return newUserInfo;
         } else {
             return null;
@@ -120,12 +134,17 @@ public class Replica implements Auction, ReplicaComms{
         AuctionDetails auctionDetails = new AuctionDetails(userID, auctionItem, auctionItem.highestBid);
         //putting it in the list of auctions
         winBidDetails.add(auctionDetails);
-
+        try {
+            updateAll();
+        } catch (Exception e) {
+            System.out.println("update fail");
+            e.printStackTrace();
+        }
         return auctionItem.itemID;
     }
 
     @Override
-    public AuctionItem[] listItems(){
+    public AuctionItem[] listItems() throws RemoteException{
         AuctionItem[] auctionItem = new AuctionItem[auctionItemsById.size()];
         if(auctionItem.length == 0){
             System.out.println("There are no open auctions at the moment! Replica is Alive.");
@@ -179,6 +198,12 @@ public class Replica implements Auction, ReplicaComms{
         //getting the auction close info - getting the email from the function and the highest bid from the winning details
         AuctionCloseInfo auctionCloseInfo = createCloseInfo(getEmail(auctionDetails.winningID), auctionDetails.getAuctionItem().highestBid);
 
+        try {
+            updateAll();
+        } catch (Exception e) {
+            System.out.println("update fail");
+            e.printStackTrace();
+        }
         return auctionCloseInfo;
     }
 
@@ -199,8 +224,15 @@ public class Replica implements Auction, ReplicaComms{
         //make price the highest bid
         auctionDetails.getAuctionItem().highestBid = price;
         //set the person having the highest bid
+        
         auctionDetails.setWinningID(userID);
 
+        try {
+            updateAll();
+        } catch (Exception e) {
+            System.out.println("update fail");
+            e.printStackTrace();
+        }
         return true;
     }
 
@@ -232,5 +264,42 @@ public class Replica implements Auction, ReplicaComms{
             e.printStackTrace();
             return 0;
         }
+    }
+
+    @Override
+    public void updateAll() throws RemoteException{
+        try {
+            Registry registry = LocateRegistry.getRegistry("localhost");
+            for(String name : registry.list()){
+                if(/*!(name.equals("Replica"+getPrimaryReplicaID())) &&*/name.contains("Replica")){
+                    try {
+                        ReplicaComms repComms = (ReplicaComms) registry.lookup(name);
+                        repComms.setAuctions(auctionItemsById);
+                        repComms.setBidDetails(winBidDetails);
+                        repComms.setUsers(users);
+                        System.out.println("Data is transferred.");
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                } 
+            }
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public void setBidDetails(List<AuctionDetails> detailsRep) throws RemoteException{
+        winBidDetails = new ArrayList<AuctionDetails>(detailsRep);
+    }
+
+    @Override
+    public void setUsers(HashMap<Integer, String> usersRep) throws RemoteException{
+        users = new HashMap<Integer, String>(usersRep);
+    }
+
+    @Override
+    public void setAuctions(HashMap<Integer, Integer> auctionsRep) throws RemoteException{
+        auctionItemsById = new HashMap<Integer, Integer>(auctionsRep);
     }
 }
