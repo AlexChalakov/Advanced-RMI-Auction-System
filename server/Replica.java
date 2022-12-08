@@ -1,3 +1,4 @@
+import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
@@ -6,32 +7,17 @@ import java.security.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.*;
-public class Replica implements Auction{
+public class Replica implements Auction, ReplicaComms{
 
-    //Used for listing the items
     private AuctionItem[] aItem;
-
-    //A list of all the items in auctions that are going to be bid on
-    private List<AuctionDetails> winBidDetails = new ArrayList<AuctionDetails>();
-
-    //hash map of users - userID - email
-    private HashMap<Integer, String> users = new HashMap<>();
-
-    //hash map of auction items - itemID - userID (one user can have many items)
-    private HashMap<Integer, Integer> auctionItemsById = new HashMap<>();
-
     private NewUserInfo newUserInfo;
 
-    //taking the id of the replica
-    private int ID;
+    private List<AuctionDetails> winBidDetails = new ArrayList<AuctionDetails>();
+    private HashMap<Integer, String> users = new HashMap<>();
+    private HashMap<Integer, Integer> auctionItemsById = new HashMap<>();
 
-    public Replica(int ID){
+    public Replica(){
         super();
-        this.ID = ID;
-    }
-
-    public int getID() {
-        return ID;
     }
 
     public static void main(String[] args) {
@@ -41,10 +27,11 @@ public class Replica implements Auction{
             return;
         }
 
-        int n = Integer.parseInt(args[0]);
-        Replica replica = new Replica(n);
         try {
-            String name = "Replica";
+            int replicaId = Integer.parseInt(args[0]);
+            Replica replica = new Replica();
+            
+            String name = "Replica" + replicaId;
             Auction stub = (Auction) UnicastRemoteObject.exportObject(replica, 0);
             Registry registry = LocateRegistry.getRegistry("localhost");
             registry.rebind(name, stub);
@@ -141,7 +128,7 @@ public class Replica implements Auction{
     public AuctionItem[] listItems(){
         AuctionItem[] auctionItem = new AuctionItem[auctionItemsById.size()];
         if(auctionItem.length == 0){
-            System.out.println("There are no open auctions at the moment!");
+            System.out.println("There are no open auctions at the moment! Replica is Alive.");
         }
 
         aItem = new AuctionItem[auctionItem.length];
@@ -237,6 +224,13 @@ public class Replica implements Auction{
 
     @Override
     public int getPrimaryReplicaID() throws RemoteException {
-        return 0;
+        try {
+            Registry registry = LocateRegistry.getRegistry("localhost");
+            Auction frontEnd = (Auction) registry.lookup("FrontEnd");
+            return frontEnd.getPrimaryReplicaID();
+        } catch (NotBoundException e) {
+            e.printStackTrace();
+            return 0;
+        }
     }
 }

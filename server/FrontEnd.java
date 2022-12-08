@@ -1,111 +1,186 @@
+import java.io.IOException;
+import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
+import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
-import java.util.Random;
 
 public class FrontEnd implements Auction {
-    //private Auction stub;
-    //private ArrayList<Auction> servers;
-    private boolean primaryReplica;
+    private int replicaID = 1;
+
+    public static void main(String[] args) {
+        try {
+            FrontEnd frontEnd = new FrontEnd();
+            String name = "FrontEnd";
+            Auction stub = (Auction) UnicastRemoteObject.exportObject(frontEnd, 0);
+            Registry registry = LocateRegistry.getRegistry("localhost");
+            registry.rebind(name, stub);
+            System.out.println("FrontEnd is alive!");
+        } catch (IOException e) {
+            System.out.println("FrontEnd is dead.");
+            e.printStackTrace();
+        }
+    }
 
     @Override
     public NewUserInfo newUser(String email) throws RemoteException {
-        Replica replica = getPrimaryReplica();
-        return replica.newUser(email);
+        try {
+            //Replica replica = getPrimaryReplica();
+            checkAliveOrReplace("Replica" + replicaID);
+            Auction rep = getPrimaryReplica();
+            return rep.newUser(email);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 
     @Override
     public byte[] challenge(int userID) throws RemoteException {
-        Replica replica = getPrimaryReplica();
-        return replica.challenge(userID);
+        try {
+            checkAliveOrReplace("Replica" + replicaID);
+            Auction replica = getPrimaryReplica();
+            return replica.challenge(userID);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+
     }
 
     @Override
     public boolean authenticate(int userID, byte[] signature) throws RemoteException {
-        Replica replica = getPrimaryReplica();
-        return replica.authenticate(userID, signature);
+        try {
+            checkAliveOrReplace("Replica" + replicaID);
+            Auction replica = getPrimaryReplica();
+            return replica.authenticate(userID, signature);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
     }
 
     @Override
     public AuctionItem getSpec(int itemID) throws RemoteException {
-        Replica replica = getPrimaryReplica();
-        return replica.getSpec(itemID);
+        Auction replica = getPrimaryReplica();
+        return replica.getSpec(itemID);    
     }
 
     @Override
     public int newAuction(int userID, AuctionSaleItem item) throws RemoteException {
-        Replica replica = getPrimaryReplica();
-        return replica.newAuction(userID, item);
+        try {
+            checkAliveOrReplace("Replica" + replicaID);
+            Auction replica = getPrimaryReplica();
+            return replica.newAuction(userID, item);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return 0;
+        }
     }
 
     @Override
     public AuctionItem[] listItems() throws RemoteException {
-        Replica replica = getPrimaryReplica();
-        return replica.listItems();
+        try {
+            checkAliveOrReplace("Replica" + replicaID);
+            Auction replica = getPrimaryReplica();
+            return replica.listItems();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
     }
+    //at java.base/java.lang.Thread.run(Thread.java:833)
+    //java.lang.NullPointerException: Cannot invoke "Auction.listItems()" because "<local1>" is null
 
     @Override
     public AuctionCloseInfo closeAuction(int userID, int itemID) throws RemoteException {
-        Replica replica = getPrimaryReplica();
-        return replica.closeAuction(userID, itemID);
+        try {
+            checkAliveOrReplace("Replica" + replicaID);
+            Auction replica = getPrimaryReplica();
+            return replica.closeAuction(userID, itemID);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 
     @Override
     public boolean bid(int userID, int itemID, int price) throws RemoteException {
-        Replica replica = getPrimaryReplica();
-        return replica.bid(userID,itemID,price);
+        try {
+            checkAliveOrReplace("Replica" + replicaID);
+            Auction replica = getPrimaryReplica();
+            return replica.bid(userID, itemID, price);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
     }
 
     @Override
     public int getPrimaryReplicaID() throws RemoteException {
-        Replica replica = getPrimaryReplica();
-        return replica.getPrimaryReplicaID();
+        try {
+            checkAliveOrReplace("Replica" + replicaID);
+            Auction replica = getPrimaryReplica();
+            return replica.getPrimaryReplicaID();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return 0;
+        }
     }
 
-    private Replica getPrimaryReplica() {
-        ArrayList<Auction> serverList = new ArrayList<Auction>();
+    /**
+     * Get primary server
+     * @return
+     */
+    private Auction getPrimaryReplica() {
+        ArrayList<Auction> list = getServerList();
+        System.out.println("Server list size "+ list.size());
         try {
+            System.out.println("Going through Primary replicas!");
             Registry registry = LocateRegistry.getRegistry("localhost");
-            for(String name : registry.list()){
-                try {
-                    Auction stub = (Auction) registry.lookup(name);
-                    serverList.add(stub);
-                    //primaryReplica = true;
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-            int index = new Random().nextInt(registry.list().length);
-            //create new interface of replica - ReplicaComms where the methods not concerning Auction are removed from Replica and put in there
-            //implement Replica Interface to Replica
-            Replica replica =  (Replica) serverList.get(index);
-            return replica;
+            Auction rep = (Auction) registry.lookup("Replica"+replicaID);
+            return rep;
         } catch (Exception e) {
             e.printStackTrace();
         }
         return null;
     }
 
-    
-
-    /*private Replica getPrimaryReplica() {
-        servers = getServerList();
-        Replica r = new Replica();
-        for (int i = 0; i < servers.size(); i++) {
-            Auction server = servers.get(i);
+    /**
+     * Fault Detection
+     * @param name
+     * @return
+     * @throws RemoteException
+     */
+    private boolean checkAliveOrReplace(String name) throws RemoteException{
+        Registry registry = LocateRegistry.getRegistry("localhost");
+        try {
+            Auction rep = (Auction) registry.lookup(name);
+            rep.listItems();
+            System.out.println("Alive");
+            return true;
+        } catch (Exception e) {
+            System.out.println("Dead");
             try {
-                Registry registry = LocateRegistry.getRegistry("localhost");
-                stub = server;
-                registry.lookup("");
-            } catch (Exception e) {
-                e.printStackTrace();
+                registry.unbind(name);
+                for (int i = 0; i < registry.list().length; i++) {
+                    if((registry.list()[i]!=(name))&&(registry.list()[i].contains("Replica")==true)){
+                        replicaID = Integer.parseInt(registry.list()[i].split("a")[1]);
+                    }
+                }
+            } catch (NotBoundException e1) {
+                e1.printStackTrace();
             }
+            return false;
         }
-        return r;
-    }*/
+    }
 
-    /*private ArrayList<Auction> getServerList() {
+    /**
+     * Get active servers
+     * @return
+     */
+    private ArrayList<Auction> getServerList() {
         ArrayList<Auction> serverList = new ArrayList<Auction>();
         try {
             Registry registry = LocateRegistry.getRegistry("localhost");
@@ -121,6 +196,5 @@ public class FrontEnd implements Auction {
             e.printStackTrace();
         }
         return serverList;
-    }*/
-    
+    }
 }

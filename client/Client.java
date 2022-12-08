@@ -1,15 +1,15 @@
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
+import java.util.Scanner;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.rmi.registry.LocateRegistry;
-import java.rmi.registry.Registry;
 import java.security.KeyFactory;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.Signature;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
-import java.util.Scanner;
 
 public class Client{
     public static void main(String[] args) {
@@ -19,7 +19,7 @@ public class Client{
             //Sign a message with out private key - challenge
             //and verify the signature with the public key - authenticate
 
-            String name = "Auction";
+            String name = "FrontEnd";
             Registry registry = LocateRegistry.getRegistry("localhost");
             Auction server = (Auction) registry.lookup(name);
             //AuctionItem result = server.getSpec(n);
@@ -46,7 +46,7 @@ public class Client{
                                 break;
                             }
                             //getting the client keys
-                            KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+                            /*KeyFactory keyFactory = KeyFactory.getInstance("RSA");
                             byte[] clientPublicKey = result1.publicKey;
                             byte[] clientPrivateKey = result1.privateKey;
                             PublicKey publicClientKey = keyFactory.generatePublic(new X509EncodedKeySpec(clientPublicKey));
@@ -80,7 +80,7 @@ public class Client{
                             boolean authenticated = server.authenticate(result1.userID, signBack);
                             System.out.println("User ID is: " + result1.userID);
                             System.out.println("Signed Message: " + signedMessage);
-                            System.out.println("Authentication: " + authenticated);
+                            System.out.println("Authentication: " + authenticated);*/
                             break;
 
                         case 2:
