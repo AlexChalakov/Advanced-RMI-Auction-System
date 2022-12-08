@@ -2,10 +2,12 @@ import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.util.ArrayList;
+import java.util.Random;
 
 public class FrontEnd implements Auction {
-    private Auction stub;
-    private ArrayList<Auction> servers;
+    //private Auction stub;
+    //private ArrayList<Auction> servers;
+    private boolean primaryReplica;
 
     @Override
     public NewUserInfo newUser(String email) throws RemoteException {
@@ -62,6 +64,32 @@ public class FrontEnd implements Auction {
     }
 
     private Replica getPrimaryReplica() {
+        ArrayList<Auction> serverList = new ArrayList<Auction>();
+        try {
+            Registry registry = LocateRegistry.getRegistry("localhost");
+            for(String name : registry.list()){
+                try {
+                    Auction stub = (Auction) registry.lookup(name);
+                    serverList.add(stub);
+                    //primaryReplica = true;
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+            int index = new Random().nextInt(registry.list().length);
+            //create new interface of replica - ReplicaComms where the methods not concerning Auction are removed from Replica and put in there
+            //implement Replica Interface to Replica
+            Replica replica =  (Replica) serverList.get(index);
+            return replica;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    
+
+    /*private Replica getPrimaryReplica() {
         servers = getServerList();
         Replica r = new Replica();
         for (int i = 0; i < servers.size(); i++) {
@@ -69,15 +97,15 @@ public class FrontEnd implements Auction {
             try {
                 Registry registry = LocateRegistry.getRegistry("localhost");
                 stub = server;
-                registry.rebind("Auction", stub);
+                registry.lookup("");
             } catch (Exception e) {
                 e.printStackTrace();
             }
         }
         return r;
-    }
+    }*/
 
-    private ArrayList<Auction> getServerList() {
+    /*private ArrayList<Auction> getServerList() {
         ArrayList<Auction> serverList = new ArrayList<Auction>();
         try {
             Registry registry = LocateRegistry.getRegistry("localhost");
@@ -93,6 +121,6 @@ public class FrontEnd implements Auction {
             e.printStackTrace();
         }
         return serverList;
-    }
+    }*/
     
 }

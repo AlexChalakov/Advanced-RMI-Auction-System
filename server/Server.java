@@ -284,8 +284,9 @@ public class Server implements Auction{
         return 0;
     }
 
-    public Server cloneServer() throws NoSuchAlgorithmException{
+    public Server cloneServer(Server cServer) throws NoSuchAlgorithmException{
         Server server = new Server();
+        server = cServer;
         return server;
     }
 }
