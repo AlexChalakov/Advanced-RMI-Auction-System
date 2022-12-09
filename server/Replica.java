@@ -88,8 +88,8 @@ public class Replica implements ReplicaComms{
             try {
                 updateAll();
             } catch (Exception e) {
-                System.out.println("update fail");
-                e.printStackTrace();
+                System.out.println("Update failed.");
+                //e.printStackTrace();
             }
             return newUserInfo;
         } else {
@@ -137,8 +137,8 @@ public class Replica implements ReplicaComms{
         try {
             updateAll();
         } catch (Exception e) {
-            System.out.println("update fail");
-            e.printStackTrace();
+            System.out.println("Update failed.");
+            //e.printStackTrace();
         }
         return auctionItem.itemID;
     }
@@ -201,7 +201,7 @@ public class Replica implements ReplicaComms{
         try {
             updateAll();
         } catch (Exception e) {
-            System.out.println("update fail");
+            System.out.println("Update failed.");
             e.printStackTrace();
         }
         return auctionCloseInfo;
@@ -230,7 +230,7 @@ public class Replica implements ReplicaComms{
         try {
             updateAll();
         } catch (Exception e) {
-            System.out.println("update fail");
+            System.out.println("Update failed.");
             e.printStackTrace();
         }
         return true;
@@ -271,7 +271,7 @@ public class Replica implements ReplicaComms{
         try {
             Registry registry = LocateRegistry.getRegistry("localhost");
             for(String name : registry.list()){
-                if(/*!(name.equals("Replica"+getPrimaryReplicaID())) &&*/name.contains("Replica")){
+                if(!(name.equals("Replica"+getPrimaryReplicaID())) &&name.contains("Replica")){
                     try {
                         ReplicaComms repComms = (ReplicaComms) registry.lookup(name);
                         repComms.setAuctions(auctionItemsById);
@@ -279,7 +279,7 @@ public class Replica implements ReplicaComms{
                         repComms.setUsers(users);
                         System.out.println("Data is transferred.");
                     } catch (Exception e) {
-                        e.printStackTrace();
+                        System.out.println("Unable to transfer some of the data!");
                     }
                 } 
             }

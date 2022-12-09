@@ -90,8 +90,6 @@ public class FrontEnd implements Auction {
             return null;
         }
     }
-    //at java.base/java.lang.Thread.run(Thread.java:833)
-    //java.lang.NullPointerException: Cannot invoke "Auction.listItems()" because "<local1>" is null
 
     @Override
     public AuctionCloseInfo closeAuction(int userID, int itemID) throws RemoteException {
@@ -121,8 +119,7 @@ public class FrontEnd implements Auction {
     public int getPrimaryReplicaID() throws RemoteException {
         try {
             checkAliveOrReplace("Replica" + replicaID);
-            Auction replica = getPrimaryReplica();
-            return replica.getPrimaryReplicaID();
+            return replicaID;
         } catch (Exception e) {
             e.printStackTrace();
             return 0;
@@ -164,6 +161,7 @@ public class FrontEnd implements Auction {
             System.out.println("Dead");
             try {
                 registry.unbind(name);
+                
                 for (int i = 0; i < registry.list().length; i++) {
                     if((registry.list()[i]!=(name))&&(registry.list()[i].contains("Replica")==true)){
                         replicaID = Integer.parseInt(registry.list()[i].split("a")[1]);
