@@ -6,6 +6,11 @@ import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
 
+/**
+ * FrontEnd for our application. It serves as a replica manager,
+ * checks if they are alive and chooses which one is going to do the work.
+ * If the primary replica dies, it replaces it with a new one on its place and continues working.
+ */
 public class FrontEnd implements Auction {
     private int replicaID = 1;
 
@@ -26,7 +31,6 @@ public class FrontEnd implements Auction {
     @Override
     public NewUserInfo newUser(String email) throws RemoteException {
         try {
-            //Replica replica = getPrimaryReplica();
             checkAliveOrReplace("Replica" + replicaID);
             Auction rep = getPrimaryReplica();
             return rep.newUser(email);
@@ -115,6 +119,9 @@ public class FrontEnd implements Auction {
         }
     }
 
+    /**
+     * Gets the id of the replica thats primary. It gets called in the Replica.java in the form of an if statement.
+     */
     @Override
     public int getPrimaryReplicaID() throws RemoteException {
         try {
@@ -127,8 +134,8 @@ public class FrontEnd implements Auction {
     }
 
     /**
-     * Get primary server
-     * @return
+     * Get Primary Replica and return it as a way to designate which one is doing the operations.
+     * @return rep
      */
     private Auction getPrimaryReplica() {
         ArrayList<Auction> list = getServerList();
@@ -145,9 +152,9 @@ public class FrontEnd implements Auction {
     }
 
     /**
-     * Fault Detection
-     * @param name
-     * @return
+     * Fault Detection - checks if the designated replica is alive, if not - it replaces it with a new one.
+     * @param name String of the replica
+     * @return true or false
      * @throws RemoteException
      */
     private boolean checkAliveOrReplace(String name) throws RemoteException{

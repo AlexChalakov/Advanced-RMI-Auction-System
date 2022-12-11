@@ -6,6 +6,10 @@ import java.rmi.server.UnicastRemoteObject;
 import java.security.*;
 import java.util.*;
 
+/**
+ * Replica is basically a server. There should be many replicas that are able to execute the basic functions,
+ * while also maintaining communication with each other.
+ */
 public class Replica implements ReplicaComms{
 
     private AuctionItem[] aItem;
@@ -27,24 +31,17 @@ public class Replica implements ReplicaComms{
         }
 
         try {
+            //creating a server replica with the id of the argument cast in terminal
             int replicaId = Integer.parseInt(args[0]);
             Replica replica = new Replica();
             
+            //creating the server itself in the registry
             String name = "Replica" + replicaId;
             Auction stub = (Auction) UnicastRemoteObject.exportObject(replica, 0);
             Registry registry = LocateRegistry.getRegistry("localhost");
             registry.rebind(name, stub);
 
             System.out.println("Replica ready");
-
-            /**try {
-                ReplicaComms replicaComms = (ReplicaComms) registry.lookup(name);
-                if(){
-                    replicaComms
-                }
-            } catch (NotBoundException e) {
-                e.printStackTrace();
-            }*/
         } catch (RemoteException e) {
             System.err.println("Exception:");
             e.printStackTrace();
@@ -266,6 +263,11 @@ public class Replica implements ReplicaComms{
         }
     }
 
+    /**
+     * Update method that is called at the end of every function that is copied from the server.
+     * It goes through the registry, and updates all the replica except the primary one with the info.
+     * Basically it does the data transfer so the flow of information is complete even if one of the replicas is destroyed.
+     */
     @Override
     public void updateAll() throws RemoteException{
         try {
@@ -288,6 +290,9 @@ public class Replica implements ReplicaComms{
         }
     }
 
+    /**
+     * Helper methods called in the updateAll()
+     */
     @Override
     public void setBidDetails(List<AuctionDetails> detailsRep) throws RemoteException{
         winBidDetails = new ArrayList<AuctionDetails>(detailsRep);
